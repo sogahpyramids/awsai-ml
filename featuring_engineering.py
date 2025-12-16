@@ -1,26 +1,14 @@
-import os, glob
 import pandas as pd
+import os
 
-INPUT = "/opt/ml/processing/input"
-OUTPUT = "/opt/ml/processing/output"
-os.makedirs(OUTPUT, exist_ok=True)
+INPUT_PATH = "/opt/ml/processing/input"
+OUTPUT_PATH = "/opt/ml/processing/output"
 
-# Load clean data
-files = glob.glob(f"{INPUT}/*.csv")
-df = pd.concat([pd.read_csv(f) for f in files], ignore_index=True)
+# Read all parquet files in folder
+df = pd.read_parquet(INPUT_PATH)
 
-# Basic feature engineering
-for c in df.select_dtypes(include=["number"]).columns:
-    df[c] = df[c].fillna(df[c].median())
+# Feature engineering
+df = pd.get_dummies(df)
 
-for c in df.select_dtypes(include=["object"]).columns:
-    df[c] = df[c].fillna("UNKNOWN")
-
-df_features = pd.get_dummies(df, drop_first=True)
-
-# Save features
-df_features.to_csv(f"{OUTPUT}/features.csv", index=False)
-
-print("Feature engineering complete")
-print("Rows:", df_features.shape[0])
-print("Columns:", df_features.shape[1])
+os.makedirs(OUTPUT_PATH, exist_ok=True)
+df.to_csv(f"{OUTPUT_PATH}/features.csv", index=False)
